@@ -69,7 +69,7 @@ def sign_pdf_route():
         pdf_data = pdf_file.read()
         # Descargar el PDF desde la URL proporcionada
         pdf_data = download_pdf(pdf_url)
-        
+
         # Obtener el nombre del archivo original
         parsed_url = urllib.parse.urlparse(pdf_url)
         original_filename = os.path.basename(parsed_url.path)
@@ -85,6 +85,11 @@ def sign_pdf_route():
         return send_file(output_path, as_attachment=True, download_name='signed_pdf.pdf', mimetype='application/pdf')
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/hola', methods=['GET'])
+def hola_mundo():
+    return "Hola Mundo"
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
