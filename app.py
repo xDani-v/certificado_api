@@ -9,9 +9,14 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import pkcs12
 import io
 import os
+import urllib.parse
+import logging
 
 app = Flask(__name__)
 CORS(app)  # Habilitar CORS para todas las rutas
+
+# Configurar el registro
+logging.basicConfig(level=logging.DEBUG)
 
 def download_p12(p12_url):
     response = requests.get(p12_url)
@@ -57,19 +62,24 @@ def sign_pdf(pdf_data, private_key, output_path):
 @app.route('/sign_pdf', methods=['POST'])
 def sign_pdf_route():
     try:
-        p12_url = os.getenv('P12_URL')
-        p12_password = os.getenv('P12_PASSWORD')
-        pdf_url = request.files['pdf_url']
+        p12_url = request.form.get('P12_URL')
+        p12_password = request.form.get('P12_PASSWORD')
+        pdf_url = request.form.get('pdf_url')
+        
+        logging.debug(f'Received P12_URL: {p12_url}')
+        logging.debug(f'Received P12_PASSWORD: {p12_password}')
+        logging.debug(f'Received pdf_url: {pdf_url}')
+        
+        if not p12_url or not p12_password or not pdf_url:
+            return jsonify({"error": "Missing one or more required parameters"}), 400
         
         # Descargar y cargar la clave privada y el certificado
         p12_data = download_p12(p12_url)
         private_key, certificate = load_p12(p12_data, p12_password)
         
-        # Leer el PDF proporcionado
-        pdf_data = pdf_file.read()
         # Descargar el PDF desde la URL proporcionada
         pdf_data = download_pdf(pdf_url)
-
+        
         # Obtener el nombre del archivo original
         parsed_url = urllib.parse.urlparse(pdf_url)
         original_filename = os.path.basename(parsed_url.path)
@@ -82,14 +92,14 @@ def sign_pdf_route():
         sign_pdf(pdf_data, private_key, output_path)
         
         # Devolver el PDF firmado como respuesta
-        return send_file(output_path, as_attachment=True, download_name='signed_pdf.pdf', mimetype='application/pdf')
+        return send_file(output_path, as_attachment=True, download_name=output_path, mimetype='application/pdf')
     except Exception as e:
+        logging.error(f'Error occurred: {e}', exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 @app.route('/hola', methods=['GET'])
 def hola_mundo():
     return "Hola Mundo"
-
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
