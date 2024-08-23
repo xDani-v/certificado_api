@@ -1,5 +1,6 @@
 import requests
 from flask import Flask, request, send_file, jsonify
+from flask_cors import CORS
 from PyPDF2 import PdfFileReader, PdfFileWriter
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.hashes import SHA256
@@ -10,6 +11,7 @@ import io
 import os
 
 app = Flask(__name__)
+CORS(app)  # Habilitar CORS para todas las rutas
 
 def download_p12(p12_url):
     response = requests.get(p12_url)
@@ -21,6 +23,11 @@ def load_p12(p12_data, p12_password):
         p12_data, p12_password.encode(), default_backend()
     )
     return private_key, certificate
+
+def download_pdf(pdf_url):
+    response = requests.get(pdf_url)
+    response.raise_for_status()  # Asegurarse de que la descarga fue exitosa
+    return response.content
 
 def sign_pdf(pdf_data, private_key, output_path):
     # Leer el PDF
@@ -50,9 +57,9 @@ def sign_pdf(pdf_data, private_key, output_path):
 @app.route('/sign_pdf', methods=['POST'])
 def sign_pdf_route():
     try:
-        p12_url = request.form['p12_url']
-        p12_password = request.form['p12_password']
-        pdf_file = request.files['pdf_file']
+        p12_url = os.getenv('P12_URL')
+        p12_password = os.getenv('P12_PASSWORD')
+        pdf_url = request.files['pdf_url']
         
         # Descargar y cargar la clave privada y el certificado
         p12_data = download_p12(p12_url)
@@ -60,9 +67,16 @@ def sign_pdf_route():
         
         # Leer el PDF proporcionado
         pdf_data = pdf_file.read()
+        # Descargar el PDF desde la URL proporcionada
+        pdf_data = download_pdf(pdf_url)
+        
+        # Obtener el nombre del archivo original
+        parsed_url = urllib.parse.urlparse(pdf_url)
+        original_filename = os.path.basename(parsed_url.path)
+        base_filename, file_extension = os.path.splitext(original_filename)
         
         # Definir la ruta de salida para el PDF firmado
-        output_path = 'signed_pdf.pdf'
+        output_path = f'{base_filename}_signed{file_extension}'
         
         # Firmar el PDF y guardarlo en la ruta de salida
         sign_pdf(pdf_data, private_key, output_path)
