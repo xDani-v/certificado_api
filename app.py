@@ -19,7 +19,7 @@ import logging
 import qrcode
 from PIL import Image
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 CORS(app)  # Habilitar CORS para todas las rutas
@@ -112,6 +112,11 @@ def sign_pdf(pdf_data, private_key,certificate,logo_url, output_path):
     logo_with_background.save(logo_tempfile, format='PNG')
     logo_tempfile_path = logo_tempfile.name
 
+    # Obtener la hora UTC actual
+    utc_now = datetime.utcnow()
+
+    # Restar 5 horas para obtener la hora de Ecuador
+    ecuador_now = utc_now - timedelta(hours=5)
 
     # Obtener la fecha actual
     current_date = datetime.now().strftime("%d/%m/%Y %H:%M")
