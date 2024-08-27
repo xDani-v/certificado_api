@@ -113,8 +113,10 @@ def sign_pdf(pdf_data, private_key,certificate,logo_url, output_path):
     logo_with_background.save(logo_tempfile, format='PNG')
     logo_tempfile_path = logo_tempfile.name
  
-    # Obtener la fecha actual
-    current_date = datetime.now().strftime("%d/%m/%Y %H:%M")
+     # Obtener la hora actual en la zona horaria de Ecuador
+    ecuador_tz = pytz.timezone('America/Guayaquil')
+    ecuador_now = datetime.now(ecuador_tz)
+    current_date = ecuador_now.strftime("%d/%m/%Y %H:%M")
     
     # Crear un lienzo para la anotación de firma
     packet = io.BytesIO()
@@ -210,5 +212,4 @@ def hola_mundo():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    timezone = pytz.timezone('America/Guayaquil')
     app.run(host='0.0.0.0', port=port, debug=False)
