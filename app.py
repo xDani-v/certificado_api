@@ -119,7 +119,7 @@ def sign_pdf(pdf_data, private_key,certificate,logo_url, output_path):
     ecuador_now = utc_now - timedelta(hours=5)
 
     # Obtener la fecha actual
-    current_date = datetime.now().strftime("%d/%m/%Y %H:%M")
+    current_date = ecuador_now.now().strftime("%d/%m/%Y %H:%M")
     
     # Crear un lienzo para la anotación de firma
     packet = io.BytesIO()
